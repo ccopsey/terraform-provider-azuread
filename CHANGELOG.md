@@ -1,10 +1,6 @@
-## 3.7.1 (November 20, 2025)
+## [Unreleased]
 
-FEATURES:
-
-EHANCEMENTS:
-
-BUG FIXES:
+### Fixed
 
 * `azuread_application` - Add polling to azuread_application_registration create
 
