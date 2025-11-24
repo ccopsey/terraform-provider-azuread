@@ -3,7 +3,7 @@
 set -e
 
 # Configuration
-VERSION="3.7.1"
+VERSION="3.7.3"
 PROVIDER_NAME="azuread"
 BINARY_PREFIX="terraform-provider-azuread"
 DIST_DIR="dist"
@@ -66,6 +66,34 @@ build_binaries() {
     done
 }
 
+build_oracle_linux() {
+    log_info "Building for Oracle Linux 8..."
+    
+    # Oracle Linux 8 uses the same binaries as standard Linux
+    # but we'll build with specific compatibility if needed
+    oracle_platforms=(
+        "linux/amd64"
+        "linux/arm64"
+    )
+    
+    for platform in "${oracle_platforms[@]}"; do
+        IFS='/' read -r os arch <<< "$platform"
+        
+        # Use standard Linux naming - Oracle Linux uses standard Linux binaries
+        binary_name="${BINARY_PREFIX}_${VERSION}_${os}_${arch}"
+        output_path="$DIST_DIR/$binary_name"
+        
+        log_info "Building Oracle Linux compatible binary for $os/$arch..."
+        
+        # Build with CGO disabled for better compatibility across Linux distributions
+        if CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -o "$output_path" .; then
+            log_info "Built Oracle Linux compatible $binary_name"
+        else
+            log_error "Failed to build Oracle Linux compatible binary for $os/$arch"
+        fi
+    done
+}
+
 create_zip_files() {
     log_info "Creating zip files for Terraform Registry..."
     
@@ -97,7 +125,7 @@ create_terraform_registry_files() {
     
     cd "$DIST_DIR"
     
-    # 1. Create terraform-provider-azuread_3.7.1_SHA256SUMS
+    # 1. Create terraform-provider-azuread_3.7.2_SHA256SUMS
     rm -f "${BINARY_PREFIX}_${VERSION}_SHA256SUMS"
     for zip_file in *.zip; do
         if [ -f "$zip_file" ]; then
@@ -105,7 +133,7 @@ create_terraform_registry_files() {
         fi
     done
     
-    # 2. Create terraform-provider-azuread_3.7.1_SHA256SUMS.sig
+    # 2. Create terraform-provider-azuread_3.7.2_SHA256SUMS.sig
     if command -v gpg >/dev/null 2>&1; then
         log_info "Signing SHA256SUMS with GPG..."
         gpg --detach-sign "${BINARY_PREFIX}_${VERSION}_SHA256SUMS" 2>/dev/null || {
@@ -193,6 +221,7 @@ main() {
     check_dependencies
     clean_build
     build_binaries
+    build_oracle_linux
     create_zip_files
     create_terraform_registry_files
     show_platform_summary
@@ -200,10 +229,17 @@ main() {
     
     log_info "Terraform Registry release process completed!"
     echo ""
-    log_info "Windows zip files should now be named correctly:"
-    echo "  terraform-provider-azuread_3.7.1_windows_386.zip (contains .exe)"
-    echo "  terraform-provider-azuread_3.7.1_windows_amd64.zip (contains .exe)" 
-    echo "  terraform-provider-azuread_3.7.1_windows_arm64.zip (contains .exe)"
+    log_info "Platforms built:"
+    echo "  - Standard Linux (386, amd64, arm, arm64)"
+    echo "  - Oracle Linux 8 compatible (amd64, arm64)" 
+    echo "  - macOS (amd64, arm64)"
+    echo "  - Windows (386, amd64, arm64)"
+    echo "  - FreeBSD (386, amd64, arm, arm64)"
+    echo ""
+    log_info "Windows zip files are named correctly:"
+    echo "  terraform-provider-azuread_${VERSION}_windows_386.zip (contains .exe)"
+    echo "  terraform-provider-azuread_${VERSION}_windows_amd64.zip (contains .exe)" 
+    echo "  terraform-provider-azuread_${VERSION}_windows_arm64.zip (contains .exe)"
 }
 
 main "$@"
