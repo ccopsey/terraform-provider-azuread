@@ -17,8 +17,8 @@ func main() {
 	flag.Parse()
 
 	opts := &plugin.ServeOpts{
-		Debug:        false,
-		ProviderAddr: "registry.terraform.io/hashicorp/azuread",
+		Debug:        debug,
+		ProviderAddr: "registry.terraform.io/jasonhurst/azuread",
 		ProviderFunc: provider.AzureADProvider,
 	}
 

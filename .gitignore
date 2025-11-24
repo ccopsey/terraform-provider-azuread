@@ -43,3 +43,5 @@ terraform-provider-azuread
 
 # terraform version
 .terraform-version
+
+dist/
