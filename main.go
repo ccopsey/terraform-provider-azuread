@@ -18,7 +18,7 @@ func main() {
 
 	opts := &plugin.ServeOpts{
 		Debug:        debug,
-		ProviderAddr: "registry.terraform.io/jasonhurst/azuread",
+		ProviderAddr: "registry.terraform.io/ccopsey/azuread",
 		ProviderFunc: provider.AzureADProvider,
 	}
 

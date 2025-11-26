@@ -495,10 +495,13 @@ func servicePrincipalResourceCreate(ctx context.Context, d *pluginsdk.ResourceDa
 		return tf.ErrorDiagF(errors.New("Object ID returned for service principal is nil"), "Bad API response")
 	}
 
+	id := stable.NewServicePrincipalID(*servicePrincipal.Id)
+	d.SetId(id.ID())
+
 	// Wait for the application to be replicated before proceeding
 	// This prevents "Resource does not exist" errors when using Service Principal authentication
 	if err = consistency.WaitForUpdate(ctx, func(ctx context.Context) (*bool, error) {
-		resp, err := client.CreateServicePrincipal(ctx, properties, options)
+		resp, err := client.GetServicePrincipal(ctx, id, serviceprincipal.DefaultGetServicePrincipalOperationOptions())
 		if err != nil {
 			if response.WasNotFound(resp.HttpResponse) {
 				return pointer.To(false), nil
@@ -509,9 +512,6 @@ func servicePrincipalResourceCreate(ctx context.Context, d *pluginsdk.ResourceDa
 	}); err != nil {
 		return tf.ErrorDiagF(err, "waiting for replication")
 	}
-
-	id := stable.NewServicePrincipalID(*servicePrincipal.Id)
-	d.SetId(id.ID())
 
 	// Attempt to patch the newly created service principal with the correct description, which will tell us whether it exists yet
 	// The SDK handles retries for us here in the event of 404, 429 or 5xx, then returns after giving up
